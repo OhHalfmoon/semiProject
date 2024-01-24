@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.co.poetrypainting.mapper.TradeMapper">
+
+  	<select id="getList" resultType="trade">
+	select t.memberNo buyer, m.nickname, b.memberNo seller, t.bno, b.title title, t.progress, t.tradeNo, p.pgName
+	from trade t
+	inner join board b on t.bno = b.bno
+	join member m on b.memberNo = m.memberNo
+	join progress p on t.progress = p.pgNo
+	where t.memberNo = #{memberNo} 
+  	</select>
+
+  	<select id="getMyList" resultType="trade">
+  		select * from trade where bno= #{bno} and memberNo = #{memberNo}
+  	</select>
+
+	<select id="getProgress" resultType="trade">
+  		select * from trade T join progress P on T.progress = P.pgNo where bno = #{bno} order by progress desc limit 1;
+  	</select>
+
+	<select id="getProgress2" resultType="trade">
+  		select * from trade T join progress P on T.progress = P.pgNo where bno = #{bno} and memberNo = #{memberNo};
+  	</select>  	
+
+  	<select id="getBuyer" resultType="Long">
+  		select t.memberNo 'buyer' from trade t join board b on t.bno = b.bno where t.bno= #{bno};
+  	</select>
+
+  	<select id="getSeller" resultType="Long">
+  		select b.memberNo 'seller' from trade t join board b on t.bno = b.bno where t.bno= #{bno};
+  	</select>
+
+  	<select id="read" resultType="trade">
+ 		select * from trade where tradeNo = #{tradeNo}
+ 	</select>
+
+ 	<select id="getMyList2" resultType="trade">
+		select * from trade where bno = #{bno}
+ 	</select>
+
+ 	<select id="getListBySeller" resultType="trade">
+		select m.nickname, t.memberNo buyer, b.memberNo seller, t.bno, b.title title, t.progress, t.tradeNo, p.pgName
+		from trade t
+	    inner join board b on t.bno = b.bno
+	    inner join member m on t.memberNo = m.memberNo
+		join progress p on t.progress = p.pgNo
+	    where b.memberNo = #{memberNo} and progress = 1;
+ 	</select>
+
+ 	<select id="getListByReserve" resultType="trade">
+		select m.nickname, t.memberNo buyer, b.memberNo seller, t.bno, b.title title, t.progress, t.tradeNo, p.pgName
+		from trade t
+	    inner join board b on t.bno = b.bno
+	    inner join member m on t.memberNo = m.memberNo
+		join progress p on t.progress = p.pgNo
+	    where b.memberNo = #{memberNo} and progress = 2
+ 	</select>
+
+ 	<select id="getListByFinish" resultType="trade">
+		select m.nickname, t.memberNo buyer, b.memberNo seller, t.bno, b.title title, t.progress, t.tradeNo, p.pgName
+		from trade t
+	    inner join board b on t.bno = b.bno
+	    inner join member m on t.memberNo = m.memberNo
+		join progress p on t.progress = p.pgNo
+	    where b.memberNo = #{memberNo} and progress = 3
+ 	</select>
+
+  	<insert id="insert">
+  		<selectKey keyProperty="tradeNo" order="BEFORE" resultType="Long">
+  			select max(tradeNo)+1 from trade
+  		</selectKey>
+  		insert into trade(tradeNo, memberNo, bno) values (#{tradeNo}, #{memberNo}, #{bno});
+  	</insert>
+
+  	<update id="update">
+  		update trade set
+  		progress = #{progress},
+  		updatedate = now()
+  		where tradeNo = #{tradeNo}
+  	</update>
+
+  	<update id="delete">
+  		delete from trade where tradeNo = #{tradeNo}
+  	</update>
+
+	<select id="getPgCount" resultType="int">
+		select count(*) from trade t
+		join board b using(bno) where t.progress = 3 and t.memberNo=#{memberNo};
+	</select>
+
+	<update id="updateMemberFk">
+		update trade set
+		memberNo = null
+		where memberNo = #{memberNo};
+	</update>
+
+</mapper>

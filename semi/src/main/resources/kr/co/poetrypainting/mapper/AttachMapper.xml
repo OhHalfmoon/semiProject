@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.poetrypainting.mapper.AttachMapper">
+	
+	<insert id="insert">
+		insert into attach  (attUuid, attName, attPath, bno, uuidIdx) values(#{attUuid}, #{attName}, #{attPath}, #{bno}, #{uuidIdx});
+	</insert>
+	<delete id="delete">
+		delete from attach where uuid = #{uuid}
+	</delete>
+	<select id="findBy" resultType="attach">
+	select * from attach where bno = #{bno} order by odr
+	</select>
+	<delete id="deleteAll">
+	delete from attach where bno = #{bno}	
+	</delete>
+</mapper>

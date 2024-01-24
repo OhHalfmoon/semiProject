@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.poetrypainting.mapper.BoardMapper">
+	<select id="getList" resultType="board">
+
+		select * from board where bno > 0
+	</select>
+	<insert id="insert">
+		<selectKey keyProperty="bno" order="AFTER" resultType="long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		insert into board (title, content, price, memberNo,
+		cateNo, addrNo ) values
+		(#{title}, #{content}, #{price}, #{memberNo},
+		#{cateNo}, #{addrNo})
+	</insert>
+	<delete id="delete">
+		delete from board where bno = #{bno}
+	</delete>
+	<select id="read" resultMap="boardFull">
+		select c.cateName, m.nickname, a.dong , b.* , att.*  FROM BOARD b 
+			left JOIN ATTACH att on b.bno = att.bno 
+			left join category c on b.cateNo = c.cateNo
+			left join member m on b.memberNo = m.memberNo
+			left join address a on b.addrNo = a.addrNo
+		WHERE b.bno = #{bno}
+		order by uuidIdx;
+	</select>
+
+	<update id="update">
+		update board set
+		title = #{title}
+		, content =
+		#{content}
+		, price = #{price}
+		, cateNo = #{cateNo}
+		, updateDate = now()
+		where bno = #{bno}
+
+	</update>
+
+	<select id="readByMember" resultType="long">
+		select memberNo from board
+		where bno = #{bno}
+	</select>
+
+	<select id="getCategory" resultType="category">
+		select * from category where
+		cateNo > 0
+	</select>
+	
+	<select id="getCategoryName" resultType="String">
+		select cateName from category where
+		cateNo = #{cateNo}
+	</select>
+
+	<resultMap id="boardFull" type="board">
+		<result property="bno" column="bno"/>
+		<result property="memberNo" column="memberNo"/>
+		<result property="content" column="content"/>
+		<result property="title" column="title"/>
+		<result property="regdate" column="regdate"/>
+		<result property="updateDate" column="updateDate"/>
+		<result property="uptime" column="uptime"/>
+		<result property="blind" column="blind"/>
+		<result property="cateNo" column="cateNo"/>
+		<result property="price" column="price"/>
+		<result property="addrNo" column="addrNo"/>
+		<result column="cateName" property="cateName" />
+		<result column="nickname" property="memberName" />
+		<result column="dong" property="addrName" />
+		<collection property="attachs" resultMap="attachMap"/>
+	</resultMap>
+	
+	<resultMap type="attach" id="attachMap">
+		<result property="attNo" column="attNo"/>
+		<result property="attUuid" column="attUuid"/>
+		<result property="attPath" column="attPath"/>
+		<result property="attName" column="attName"/>
+		<result property="uuidIdx" column="uuidIdx"/>
+		
+		<result property="bno" column="bno"/>
+	
+	</resultMap>
+
+	<select id="getListWithName" resultMap="boardFull">
+		select c.cateName,
+		m.nickname, a.dong, b.*, att.*
+		from board b
+		left outer join category c on
+		b.cateNo = c.cateNo
+		left outer join member m on b.memberNo = m.memberNo
+		left outer join address a on b.addrNo = a.addrNo
+		left outer join attach att on att.bno = b.bno and att.uuidIdx = 0
+		where b.bno > 0 and blind = 0
+		order by b.uptime desc
+		limit #{amount} offset #{offset}
+	</select>
+	<select id="getListMain" resultMap="boardFull">
+		select c.cateName,
+		m.nickname, a.dong, b.*, att.*
+		from board b
+		left outer join category c on
+		b.cateNo = c.cateNo
+		left outer join member m on b.memberNo = m.memberNo
+		left outer join address a on b.addrNo = a.addrNo
+		left outer join attach att on att.bno = b.bno and att.uuidIdx = 0
+		where b.bno > 0 and blind = 0
+		order by b.uptime desc
+		limit 12 offset 0
+	</select>
+	<select id="getListWithAddr" resultMap="boardFull">
+select c.cateName, m.nickname, a.dong , b.* , att.*,get_distance2(#{member.memberNo} ,a.x,a.y)
+		from board b
+		left outer join category c on b.cateNo = c.cateNo
+		left outer join member m on b.memberNo = m.memberNo
+		left outer join address a on b.addrNo = a.addrNo
+		left outer join attach att on att.bno = b.bno and att.uuidIdx = 0
+		where get_distance2(#{member.memberNo} ,a.x,a.y)<![CDATA[ < ]]>  #{option}
+		and blind = 0
+		order by b.uptime desc
+		limit #{criteria.amount} offset #{criteria.offset}
+	
+	</select>
+
+	<select id="getTotalCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM BOARD
+		WHERE bno > 0 and blind = 0
+	</select>
+
+	<select id="getTotalCntSearch" resultType="int">
+		SELECT COUNT(*)
+		from
+		board b
+		left outer join category c on b.cateNo = c.cateNo
+		left outer
+		join member m on b.memberNo = m.memberNo
+		left outer join address a on
+		b.addrNo = a.addrNo
+		where c.cateName Like CONCAT('%', #{keyword}, '%')
+		OR b.content like CONCAT('%', #{keyword}, '%')OR b.title like
+		CONCAT('%', #{keyword}, '%')OR m.nickname like CONCAT('%', #{keyword},
+		'%')OR a.dong like CONCAT('%', #{keyword}, '%') and blind = 0
+	</select>
+
+	<select id="getListWithKeyword" resultMap="boardFull">
+		select c.cateName,
+		m.nickname, a.dong, b.*, att.*
+		from board b
+		left outer join category c on
+		b.cateNo = c.cateNo
+		left outer join member m on b.memberNo = m.memberNo
+		left outer join address a on b.addrNo = a.addrNo
+		left outer join attach att on att.bno = b.bno and att.uuidIdx = 0
+		where c.cateName Like
+		CONCAT('%', #{keyword}, '%') OR b.content like CONCAT('%', #{keyword},
+		'%')OR b.title like CONCAT('%', #{keyword}, '%')OR m.nickname like
+		CONCAT('%', #{keyword}, '%')OR a.dong like CONCAT('%', #{keyword},
+		'%') and blind = 0
+		order by b.uptime desc
+		limit #{amount} offset #{offset}
+	</select>
+
+	<select id="getAddrCnt" resultType="int">
+		select count(get_distance2(#{member.memberNo} ,a.x,a.y))
+		from board b
+		left outer join member m on b.memberNo = m.memberNo
+		left outer join address a on b.addrNo = a.addrNo
+		where get_distance2(#{member.memberNo} ,a.x,a.y)<![CDATA[ < ]]>  #{option}
+		and blind = 0
+	</select>
+
+	<select id="getListCate" resultMap="boardFull">
+		select
+			c.cateName,
+			m.nickname,
+			a.dong ,
+			b.*,
+			att.*
+			,get_distance2(#{member.memberNo} ,a.x,a.y)
+		from board b
+		left outer join category c on b.cateNo = c.cateNo
+		left outer join member m on b.memberNo = m.memberNo
+		left outer join address a on b.addrNo = a.addrNo
+		left outer join attach att on att.bno = b.bno and att.uuidIdx = 0
+		where
+			b.cateNo = #{cateNo}
+		and get_distance2(#{member.memberNo} ,a.x,a.y)<![CDATA[ < ]]>  #{option}
+		order by b.uptime desc
+		limit #{criteria.amount} offset #{criteria.offset}
+		
+
+	</select>
+	<select id="getCateCnt" resultType="int">
+	select count(get_distance2(#{member.memberNo} ,a.x,a.y))
+		from board b
+		left outer join member m on b.memberNo = m.memberNo
+		left outer join address a on b.addrNo = a.addrNo
+		left outer join category c  on b.cateNo  = c.cateNo 
+		where b.cateNo = #{cateNo} and get_distance2(#{member.memberNo} ,a.x,a.y)<![CDATA[ < ]]>  #{option}
+		and b.blind = 0
+	</select>
+	
+	<update id="uptime">
+		update board set
+		updateDate = now(),
+		uptime = now()
+		where bno = #{bno};
+	</update>
+
+	<select id="getMyList" resultMap="boardFull">
+		select c.cateName,
+		m.nickname, a.dong, b.*, att.*
+		from board b
+		left outer join category c on
+		b.cateNo = c.cateNo
+		left outer join member m on b.memberNo = m.memberNo
+		left outer join address a on b.addrNo = a.addrNo
+		left outer join attach att on att.bno = b.bno and att.uuidIdx = 0
+		where b.memberNo = #{memberNo} and b.blind = 0
+		order
+		by b.uptime desc
+	</select>
+
+	<update id="updateMemberFK">
+		update board set
+		memberNo = null
+		where memberNo = #{memberNo}
+	</update>
+
+	<update id="blind">
+
+update board set
+		updateDate = now(),
+		blind = 1
+		where bno = #{bno};
+	</update>
+</mapper>

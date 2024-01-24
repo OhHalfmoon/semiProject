@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.poetrypainting.mapper.MemberMapper">
+
+    <insert id="insert">
+        <selectKey keyProperty="memberNo" resultType="long" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into member(memberId, password, email, nickname) values
+            (#{memberId}, #{password}, #{email}, #{nickname})
+    </insert>
+
+    <select id="get" resultType="kr.co.poetrypainting.domain.MemberVO">
+        select * from member where memberNo = #{memberNo}
+    </select>
+
+    <select id="getByMemberId" resultType="kr.co.poetrypainting.domain.MemberVO">
+        <!--
+            select memberId from withdrawal w where memberId = #{memberId}
+            union
+            select memberId from member where memberId = #{memberId}
+        -->
+        select * from member where memberId = #{memberId}
+    </select>
+
+    <select id="idCheck" resultType="string">
+        select memberId from withdrawal w where memberId = #{memberId}
+        union
+        select memberId from member where memberId = #{memberId}
+    </select>
+
+    <select id="getByNickname" resultType="kr.co.poetrypainting.domain.MemberVO">
+        select * from member where nickname = #{nickname}
+    </select>
+
+    <select id="getList" resultType="kr.co.poetrypainting.domain.MemberVO">
+        select * from member
+    </select>
+
+    <update id="update" parameterType="memberModify">
+        update member set nickname=#{nickname}
+        <if test="newEmail != null and newEmail != ''">
+            , email=#{newEmail}
+        </if>
+        , updatedate=sysdate()
+        where memberNo=#{memberNo}
+    </update>
+
+    <update id="changePassword" parameterType="passChange">
+        update member set password=#{newPassword}
+        where memberNo=#{memberNo}
+    </update>
+
+    <delete id="delete">
+        delete from member where memberNo=#{memberNo}
+    </delete>
+
+    <select id="getMypage" parameterType="long" resultMap="myPageMap" >
+        select
+        m.memberNo, m.memberId, m.password, m.email, m.nickname, m.regDate, m.updateDate, m.credit, m.admin,
+        s.shopNo, s.shopName, s.intro, s.visits, datediff(now(), m.regdate) as "openDate"
+        from member m
+        join shop s on m.memberNo=s.shopNo
+        where m.memberNo=#{memberNo}
+
+    </select>
+
+
+    <resultMap id="member" type="memberVO">
+        <result property="memberNo" column="memberNo" />
+        <result property="memberId" column="memberId" />
+        <result property="password" column="password" />
+        <result property="email" column="email" />
+        <result property="nickname" column="nickname" />
+        <result property="regDate" column="regDate" />
+        <result property="updateDate" column="updateDate" />
+        <result property="credit" column="credit" />
+        <result property="admin" column="admin" />
+    </resultMap>
+
+    <resultMap id="shop" type="ShopVO">
+        <result property="shopNo" column="shopNo"/>
+        <result property="visits" column="visits" />
+        <result property="intro" column="intro" />
+        <result property="shopName" column="shopName" />
+    </resultMap>
+
+    <resultMap id="myPageMap" type="myPage" extends="member">
+        <result property="openDate" column="openDate" />
+        <association property="shopVO" resultMap="shop" />
+    </resultMap>
+
+    <update id="increaseCredit">
+        update member set credit=credit+#{amount}
+        where memberNo=#{memberNo}
+    </update>
+
+    <update id="decreaseCredit">
+        update member set credit=credit-#{amount}
+        where memberNo=#{memberNo}
+    </update>
+
+    <update id="setCredit">
+        update member set credit=#{credit}
+        where memberNo=#{memberNo}
+    </update>
+
+</mapper>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.poetrypainting.mapper.ChatMapper">
+
+	<select id="getList" resultType="kr.co.poetrypainting.domain.ChatRoomVO">
+		select * from chatRoom
+	</select>
+	<insert id="insertMes">
+		insert into chatmessage (
+		chatRoomNo,
+		senderNo,
+		content,
+		receiverNo
+		) values (
+		#{chatRoomNo},
+		#{senderNo},
+		#{content},
+		#{receiverNo}
+		)
+	</insert>
+
+	<select id="getChatMessageList" resultType="kr.co.poetrypainting.domain.ChatMessageVO" parameterType="Long">
+		SELECT
+		*,
+		CASE
+		WHEN senderNo = #{senderNo} THEN 'R' ELSE 'L'
+		end as flag
+		FROM
+		chatmessage
+		where
+		chatRoomNo = #{chatRoomNo}
+		order by sendtime desc limit 20;
+	</select>
+
+	<insert id="insertRoom">
+		insert into chatroom (
+		name,
+		bno
+		) values (
+		#{name},
+		#{bno}
+		)
+	</insert>
+
+	<select id="getChatRoomList" resultType="kr.co.poetrypainting.domain.ChatRoomVO" parameterType="Long">
+		SELECT *,
+		CASE
+		WHEN EXISTS (
+		SELECT *
+		FROM chatmessage
+		WHERE chatRoomNo = cr.chatRoomNo AND checked = '0' AND senderNo != #{memberNo}
+		) THEN 'F'
+		ELSE 'T'
+		END AS flag
+		FROM chatroom AS cr
+		WHERE cr.chatRoomNo IN (
+		SELECT chatRoomNo
+		FROM chatmessage
+		WHERE receiverNo = #{memberNo} OR senderNo = #{memberNo}
+		)
+		GROUP BY cr.chatRoomNo;
+	</select>
+
+	<delete id="delete">
+		delete from chatroom where chatRoomNo = #{chatRoomNo};
+	</delete>
+<!--	ALTER TABLE semi_db.chatmessage MODIFY COLUMN checked tinyint(1) DEFAULT false NOT NULL;-->
+	<update id="checkedUpdate">
+		UPDATE chatmessage
+		SET checked=1
+		WHERE senderNo != #{senderNo} and chatRoomNo = #{chatRoomNo};
+	</update>
+</mapper>

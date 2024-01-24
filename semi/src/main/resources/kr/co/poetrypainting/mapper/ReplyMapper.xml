@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <!-- since 2023/04/11 CRUD 테스트 -->
+  <!-- since 2023/04/13 동주소, 닉네임 join  -->
+ 
+ <mapper namespace="kr.co.poetrypainting.mapper.ReplyMapper">
+ 
+ 	<insert id="insert">
+ 		<selectKey keyProperty="rno" order="BEFORE" resultType="long">
+ 			select max(rno)+1 from reply
+ 		</selectKey>
+ 		insert into reply(rno, memberNo, bno, comment, rating) values (#{rno}, #{memberNo}, #{bno}, #{comment}, #{rating})	
+ 	</insert>
+ 	
+ 	<select id="read" resultType="reply">
+ 		select * from reply where rno = #{rno}
+ 	</select>
+ 	
+ 	 <select id="readBno" resultType="reply">
+ 		select * from reply where bno = #{bno}
+ 	</select>
+ 	
+ 	 <select id="getListBno" resultType="reply">
+ 		select * from reply where bno = #{bno}
+ 	</select> 	
+ 	
+ 	<select id="getAddress" resultType="reply">
+ 		select * from address a inner join `member` m  on m.memberNo = a.memberNo inner join reply r on r.memberNo = m.memberNo where r.bno = #{bno}
+ 	</select>
+ 	
+ 	<select id="getNickName" resultType="reply">
+ 		select * from member m inner join reply r on r.memberNo = m.memberNo where r.bno = #{bno}
+ 	</select>
+ 	
+ 	<delete id="delete">
+ 		delete from reply where rno = #{rno}
+ 	</delete>
+ 	
+ 	<delete id="deleteByBno">
+ 		delete from reply where bno = #{bno}
+ 	</delete>
+ 	
+ 	<update id="update">
+	 	update reply set
+	 	comment = #{comment},
+	 	rating = #{rating},
+	 	updatedate = now()
+	 	where bno = #{bno}
+ 	</update>
+	<!--
+	<select id="getList" resultType="reply">
+		select * from reply where memberno = #{memberNo}
+	</select>
+	-->
+
+	<select id="getListMypage" resultMap="replyMyPageMap">
+		<!--
+		select
+			r.bno, r.rno, r.memberNo, r.comment, r.regdate, r.rating,
+			b.title, b.price,
+			a.dong
+		from reply r
+			join board b using(bno)
+			join member m on r.memberNo = m.memberNo
+			join address a using(addrNo)
+		where r.memberNo = #{memberNo}
+		-->
+
+		select
+		r.bno, r.rno, r.memberNo, r.comment, r.regdate, r.rating,
+		b.title, b.price,
+		a.dong,
+		att.attUuid, att.attName, att.attPath, att.uuidIdx
+		from reply r
+		join board b using(bno)
+		join member m on r.memberNo = m.memberNo
+		join address a using(addrNo)
+		left join attach att using(bno)
+		where r.memberNo = #{memberNo} and
+		(att.uuidIdx is null or att.uuidIdx = 0)
+	</select>
+
+	<resultMap id="replyVO" type="reply">
+		<result column="bno" property="bno" />
+		<result column="rno" property="rno" />
+		<result column="memberno" property="memberNo" />
+		<result column="comment" property="comment" />
+		<result column="regdate" property="regdate" />
+		<result column="rating" property="rating" />
+		<result column="title" property="title" />
+		<result column="price" property="price"  />
+		<result column="dong" property="dong" />
+	</resultMap>
+
+	<resultMap id="replyMyPageMap" type="replyMypage" extends="replyVO">
+		<association property="attachDTO" resultMap="replyBoardAttach" />
+	</resultMap>
+
+	<resultMap id="replyBoardAttach" type="attach">
+		<result property="attUuid" column="attUuid" />
+		<result property="attName" column="attName" />
+		<result property="attPath" column="attPath" />
+		<result property="uuidIdx" column="uuidIdx" />
+	</resultMap>
+
+	<select id="getList2" resultType="reply">
+
+<!--  	select * from member m inner join reply r on r.memberNo = m.memberNo 
+ 	join address a on m.memberNo = a.memberNo 
+ 	where r.bno = #{bno} and r.rno > #{rno} 	 -->
+ 	select * ,(select max(progress) from trade t where m.memberNo = t.memberNo) progress
+	from member m 
+		join reply r using(memberNo) 
+		join address a using(memberNo) 
+	where bno = #{bno} and r.rno > #{rno}
+ 	</select>
+
+	<update id="updateMemberFk">
+		update reply set
+		memberNo = null
+		where memberNo = #{memberNo};
+	</update>
+
+ </mapper> 

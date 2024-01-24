@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.poetrypainting.mapper.CheatMapper">
+
+  <!-- 신고 정보 추가 -->
+  <insert id="insert">
+    INSERT INTO CHEAT (memberNo ,cateNo , chEtc ,bno) VALUES ( #{memberNo}, #{cateNo}, #{chEtc}, #{bno});
+  </insert>
+
+
+ 
+ <!--  신고 정보 조회 -->
+  <select id="selectOne"  resultMap="cheatFull">
+  SELECT ch.*, m.memberNo penaltyUserNo
+FROM CHEAT ch
+join board b on b.bno = ch.bno
+join `member` m on m.memberNo = b.memberNo
+WHERE chNo  =  #{chNo}
+  </select>
+ 
+ <update id="update">
+ update cheat set
+		chProgress = 1
+		, penaltyNo = #{penaltyNo}
+		, penaltyEtc = #{penaltyEtc}
+		, penaltyDate = now()
+		where chNo = #{chNo};
+ 
+ </update>
+
+	<resultMap id="cheatFull" type="cheat">
+		<result property="chNo" column="chNo"/>
+		<result property="memberNo" column="memberNo"/>
+		<result property="cateNo" column="cateNo"/>
+		<result property="chDate" column="chDate"/>
+		<result property="chProgress" column="chProgress"/>
+		<result property="chEtc" column="chEtc"/>
+		<result property="penaltyNo" column="penaltyNo"/>
+		<result property="bno" column="bno"/>
+		<result property="penaltyEtc" column="penaltyEtc"/>
+		<result property="penaltyDate" column="penaltyDate"/>
+		<result property="cheatName" column="cheatName"/>
+		<result property="chReport" column="chReport"/>
+		<result property="penaltyUserNo" column="penaltyUserNo"/>
+		<result property="penaltyName" column="penaltyName"/>
+		<result property="penaltyReport" column="penaltyReport"/>
+		
+		<result property="title" column="title"/>
+		<result property="price" column="price"/>
+		<result property="dong" column="dong"/>
+		<collection property="attachs" resultMap="attachMap"/>
+	</resultMap>
+	
+	<resultMap type="attach" id="attachMap">
+		<result property="attNo" column="attNo"/>
+		<result property="attUuid" column="attUuid"/>
+		<result property="attPath" column="attPath"/>
+		<result property="attName" column="attName"/>
+		<result property="uuidIdx" column="uuidIdx"/>
+		<result property="bno" column="attBno"/>
+	</resultMap> 
+ 
+ 
+ 
+ 
+ <select id="selectCheat" resultMap="cheatFull">
+select  att.attNo, att.attUuid ,att.bno attBno, att.attName, att.attPath, att.uuidIdx , m1.nickname cheatName, m2.nickname penaltyName, m2.memberNo penaltyUserNo, c.chReport, b.title,b.price, ch.* ,a.dong
+FROM CHEAT ch
+left join attach att on att.bno = ch.bno and att.uuidIdx = 0
+join `member` m1 on m1.memberNo = ch.memberNo
+join cheatcategory c on c.cateNo = ch.cateNo 
+join board b on b.bno = ch.bno
+join address a  on a.addrno = b.addrNo 
+join `member` m2 on m2.memberNo = b.memberNo
+WHERE chProgress = 0
+limit #{amount} offset #{offset}
+
+
+ </select>
+ <select id="selectPenalty" resultMap="cheatFull">
+ 	select  att.attNo, att.attUuid ,att.bno attBno, att.attName, att.attPath, att.uuidIdx 
+ 	, m1.nickname cheatName, m2.nickname penaltyName, c.chReport, b.title,b.price, ch.* ,a.dong, p.penaltyName penaltyReport
+FROM CHEAT ch
+left join attach att on att.bno = ch.bno and att.uuidIdx = 0
+join `member` m1 on m1.memberNo = ch.memberNo
+join cheatcategory c on c.cateNo = ch.cateNo 
+join board b on b.bno = ch.bno
+join address a  on a.addrno = b.addrNo 
+join `member` m2 on m2.memberNo = b.memberNo
+join penalty p on p.penaltyNo = ch.penaltyNo 
+WHERE chProgress = 1
+order by chNo desc
+limit #{amount} offset #{offset}
+ </select>
+ 
+ <select id="totalCnt" resultType="int">
+ select count(*)
+FROM CHEAT ch
+
+WHERE chProgress = 0
+
+ </select>
+ <select id="totalPenaltyCnt" resultType="int">
+ select count(*)
+FROM CHEAT ch
+
+WHERE chProgress = 1
+
+ </select>
+ <select id="penaltyList" resultType="kr.co.poetrypainting.domain.dto.PenaltyDTO">
+ select * from penalty order by penaltyNo
+ </select>
+ <select id="cheatList" resultType="kr.co.poetrypainting.domain.dto.CheatCategoryDTO">
+select * from cheatcategory order by cateNo 
+ </select>
+
+	<update id="updateMemberFK">
+		update cheat set
+		memberNo = null
+		where memberNo = #{memberNo};
+	</update>
+</mapper>

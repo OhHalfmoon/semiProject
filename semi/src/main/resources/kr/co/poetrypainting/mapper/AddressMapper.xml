@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  
+  <!-- since 2023/04/06 생성 조회 삭제기능 -->
+  <!-- since 2023/04/07 업데이트 추가 -->
+  <!-- since 2023/04/10 memberNo를 통해 addr조회 추가 -->
+  <!-- since 2023/04/11 memberNo를 통해 해당 회원의 addr조회 추가 -->  
+  
+  
+<mapper namespace="kr.co.poetrypainting.mapper.AddressMapper">
+
+ 	<select id="getList" resultType="address">
+ 		select * from address where addrNo > 0
+ 	</select>
+
+ 	<select id="getMyList" resultType="address">
+ 		select * from address where memberNo = #{memberNo} 
+ 	</select>
+ 	
+ 	<select id="getAddressList" resultType="address">
+ 		select addrNo, addr, addrDetail, mainAddr, memberNo 
+ 		from address where memberNo = #{memberNo} 
+ 		order by mainAddr desc
+ 	</select>  	
+ 	
+ 	<select id="read" resultType="address">
+ 		select * from address where addrNo = #{addrNo}
+ 	</select>
+ 	
+ 	<select id="findMain" resultType="address">
+ 		select * from address where memberNo = #{addrNo} and mainAddr = 1
+ 	</select>
+
+ 	<select id="readByMember" resultType="Long">
+ 		select addrNo from address a inner join member m on a.memberNo = m.memberNo where a.memberNo = #{memberNo} 		
+ 	</select>
+ 	
+    <insert id="insert">
+        insert into address(memberNo, addr, addrDetail, y, x, dong) values          
+            (#{memberNo}, #{addr}, #{addrDetail}, #{y}, #{x}, #{dong})
+    </insert>
+    
+    <insert id="insertSelectkey">
+    	<selectKey keyProperty="addrNo" order="BEFORE" resultType="long">
+    		select max(addrNo)+1 from address
+    	</selectKey>
+        insert into address(addrNo, memberNo, addr, addrDetail, y, x, dong, mainAddr)
+		values (#{addrNo}, #{memberNo}, #{addr}, #{addrDetail}, #{y}, #{x}, #{dong}, #{mainAddr})
+    </insert>
+    
+    <delete id="delete">
+ 		delete from address where addrNo = #{addrNo}
+ 	</delete>
+    
+    <update id="update">
+    	update address set
+    	addr = #{addr}
+    	,addrDetail = #{addrDetail}
+    	,y = #{y}
+    	,x = #{x}
+    	,dong = #{dong}
+    	,updateDate = now()
+    	where addrNo = #{addrNo}
+    </update>
+    
+    <update id="downMain">
+		update address set 
+		mainAddr = 0
+		 where memberNo = #{memberNo} and mainAddr = 1;
+    </update>    
+    
+    <update id="updateMain">
+    	update address set
+    	mainAddr = 1
+    	where addrNo = #{addrNo}
+    </update>
+    
+    <select id="getDistance" resultType="Double">   
+	    select get_distance2(#{memberNo}, a.x, a.y)  
+		from board join address a using(memberNo)	
+		<![CDATA[					
+ 		where get_distance2(#{memberNo}, a.x, a.y)  		
+ 		<= #{option}
+ 		]]> 
+    </select>
+
+	<update id="updateMemberNo">
+		update address set memberNo = null where memberNo = #{memberNo}
+	</update>
+    
+  
+</mapper>

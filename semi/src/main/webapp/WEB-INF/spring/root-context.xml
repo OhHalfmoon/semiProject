@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	   xmlns:tx="http://www.springframework.org/schema/tx"
+	   xmlns:aop="http://www.springframework.org/schema/aop" xmlns:util="http://www.springframework.org/schema/util"
+	   xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	<context:property-placeholder location="classpath:/jdbc.properties,classpath:/mail.properties"/>
+<!--	<context:property-placeholder location="classpath:/mail.properties"/>-->
+
+ 	<mybatis-spring:scan base-package="kr.co.poetrypainting.mapper"/>
+	<bean class="com.zaxxer.hikari.HikariConfig" id="hikariConfig">
+		<property name="driverClassName" value="${db.classname}"/>
+		<property name="jdbcUrl" value="${db.url}"/>
+		<property name="username" value="${db.username}"/>
+		<property name="password" value="${db.password}"/>
+	</bean>
+
+ 	<bean class="com.zaxxer.hikari.HikariDataSource" destroy-method="close" id="dataSource">
+		<constructor-arg ref="hikariConfig"/>
+	</bean>
+	
+	<bean class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="typeAliasesPackage" value="kr.co.poetrypainting.domain" />
+	</bean>
+	
+	<context:component-scan base-package="kr.co.poetrypainting.domain" />
+	<context:component-scan base-package="kr.co.poetrypainting.domain.dto" />
+	<context:component-scan base-package="kr.co.poetrypainting.service" />
+	<context:component-scan base-package="kr.co.poetrypainting.mapper" />
+
+	<aop:aspectj-autoproxy />
+	<tx:annotation-driven />
+	
+	<bean class="org.springframework.jdbc.datasource.DataSourceTransactionManager" id="transactionManager" >
+    	<property name="dataSource" ref="dataSource" />
+    </bean>
+
+</beans>
